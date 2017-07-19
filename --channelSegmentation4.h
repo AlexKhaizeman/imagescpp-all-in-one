@@ -1,3 +1,5 @@
+//как третий, только наоброт: сначала проход очень маленьким окном, а потом расчёт для большого...
+
 // path - путь, куда писать;
 // info - просто строка, сообщающая канал. бывает: R G B grey
 // channel_R - массив - цветовой канал; 
@@ -9,7 +11,7 @@
 // высота окна;
 // массив вероятностей, вычсленный на шаге 1
 // жёсткость выбора порогов
-unsigned short **channelSegmentation3_SecondStep(string path, string info, unsigned short **channel_R, int width, int height, int bi, int points_number, int frameWidthMax, int frameHeightMax, double **pi_average_first, double hardness){
+unsigned short **channelSegmentation4_SecondStep(string path, string info, unsigned short **channel_R, int width, int height, int bi, int points_number, int frameWidthMax, int frameHeightMax, double **pi_average_first, double hardness){
 	ofstream f;
 	f.open(path + "/output.txt", ios::app);
 /*	f<<"Сегметация канала: " + info<<endl;
@@ -563,7 +565,7 @@ unsigned short **channelSegmentation3_SecondStep(string path, string info, unsig
 // ширина окна; 
 // высота окна
 // жёсткость выбора порогов
-unsigned short **channelSegmentation3(string path, string info, unsigned short **channel_R, int width, int height, int bi, int points_number, int frameWidth, int frameHeight, double hardness){
+unsigned short **channelSegmentation4(string path, string info, unsigned short **channel_R, int width, int height, int bi, int points_number, int frameWidth, int frameHeight, double hardness){
 	ofstream f;
 	f.open(path + "/output.txt", ios::app);
 	f<<"Сегметация канала: " + info<<endl;
@@ -581,10 +583,16 @@ unsigned short **channelSegmentation3(string path, string info, unsigned short *
 	Pixels temp_view(temp_image);
 	//0<bi<7 - number of a binary image
 	int 
+		//window size modify:
+		frameWidth_old = frameWidth,
+		frameHeight_old = frameHeight,
 		comporator = 1<<bi, //нужен здесь. Поясняет, какой бит брать.
 		frameSquare = frameHeight * frameWidth,
 		//points
-		current_points_number = 0,
+		current_points_number = 0;
+	frameWidth = 7;
+	frameHeight = 7;
+	int
 		frameHeightHalf = (frameHeight-1) / 2,
 		frameWidthHalf = (frameWidth-1) / 2;
 	double 

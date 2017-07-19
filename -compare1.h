@@ -1,12 +1,3 @@
-//факториал
-int fact(int input){
-	int fact=1;
-	while (input>0){
-		fact *=input--;
-	}
-	return fact;
-}
-
 //
 //
 //
@@ -14,7 +5,7 @@ int fact(int input){
 //
 //
 //
-void channelCompare(string path, string info, unsigned short **channel_R, unsigned short **channel_R_S, unsigned short **channel_R_C, int width, int height){
+void channelCompare1(string path, string info, unsigned short **channel_R, unsigned short **channel_R_S, unsigned short **channel_R_C, int width, int height){
 	ofstream f;
 	f.open(path + "/output.txt", ios::app);	
 	// dump(info);
@@ -25,69 +16,7 @@ void channelCompare(string path, string info, unsigned short **channel_R, unsign
 	std::list<unsigned short>::iterator it_ = colours_.begin();
 	std::list<unsigned short>::iterator it_S = colours_.begin();
 
-	//just a check
-	dump("Pshhh");
-	f<<"Pshhh"<<endl;
-	seg_error = 0;
-	for ( ssize_t row = 0; row < height ; row++ ){
-		for ( ssize_t column = 0; column < width ; column++ ){
-			if (channel_R[row][column] == channel_R_S[row][column]){
-				channel_R_C[row][column] = 255;
-			}
-			else{
-				seg_error++;
-				channel_R_C[row][column] = 0;
-			}				
-		}
-	}
-	seg_error /= square/100;
-
-	dump("Blind error " + to_string(seg_error));
-	f<<"Blind error " + to_string(seg_error)<<endl;
-
-	seg_error=0;
-	//just a check
-
-	//надо типа не так, а использовать вероятностный подход
-	/*std::list<double> part_;
-	std::list<double> part_S;
-	std::list<double>::iterator it_part_ = part_.begin();
-	std::list<double>::iterator it_part_S = part_S.begin();
-	double* p;*/
-	bool thereis = false;
-	
-	/*for ( ssize_t row = 0; row < height ; row++ ){
-		for ( ssize_t column = 0; column < width ; column++ ){								
-			thereis = false;
-			it_part_ = part_.begin();  			
-  			for (std::list<unsigned short>::iterator it = colours_.begin(); it != colours_.end(); ++it){
-  				it_part_++;
-  				if (*it == channel_R[row][column]){
-  					thereis = true;  					
-  					*it_part_ = *it_part_ + 1;
-  				}
-  			}
-
-  			if (!thereis){
-				colours_.push_back(channel_R[row][column]);
-				part_.push_back(1);
-			}
-
-			thereis = false;
-			it_part_S = part_S.begin();
-  			for (std::list<unsigned short>::iterator it = colours_S.begin(); it != colours_S.end(); ++it){
-  				it_part_S++;
-  				if (*it == channel_R_S[row][column]){
-  					thereis = true;
-  					*it_part_S = *it_part_S + 1;
-  				}
-  			}
-  			if (!thereis){
-				colours_S.push_back(channel_R_S[row][column]);
-				part_S.push_back(1);
-			}
-		}
-	}*/		
+	bool thereis = false;	
 
 	for ( ssize_t row = 0; row < height ; row++ ){
 		for ( ssize_t column = 0; column < width ; column++ ){								
@@ -179,54 +108,7 @@ void channelCompare(string path, string info, unsigned short **channel_R, unsign
 		// f<<to_string(colours_array_S[i]) + " цвет на сравниваемом изображении " + to_string(part_S[i])<<endl;		
 	}
 
-    	/*//playground
-		for ( ssize_t row = 0; row < height ; row++ ){
-			for ( ssize_t column = 0; column < width ; column++ ){
-				channel_R_C[row][column] = (channel_R[row][column] + channel_R_S[row][column])/2;
-			}
-		}*/		
 
-	/*
-    //если в эталоне больше цветов
-    if(colours_.size()>colours_S.size()){
-		for ( ssize_t row = 0; row < height ; row++ ){
-			for ( ssize_t column = 0; column < width ; column++ ){
-				for (int i = 0; i < colours_S.size(); i++)
-					if (channel_R[row][column] == colours_array[i]){
-						if (channel_R_S[row][column] == colours_array_S[i])
-							channel_R_C[row][column] = 255;
-						else{
-							seg_error++;
-							channel_R_C[row][column] = 0;
-						}							
-					}
-			}
-		}
-	    seg_error = 100*seg_error/square;
-		for (int i = colours_S.size(); i < colours_.size(); i++)
-			seg_error += part_[i];
-    } //если в эталоне цветов меньше или столько же
-    else{
-		for ( ssize_t row = 0; row < height ; row++ ){
-			for ( ssize_t column = 0; column < width ; column++ ){
-				for (int i = 0; i < colours_.size(); i++)
-					if (channel_R_S[row][column] == colours_array_S[i]){
-						if (channel_R[row][column] == colours_array[i])	
-							channel_R_C[row][column] = 255;
-						else{
-							seg_error++;
-							channel_R_C[row][column] = 0;
-						}							
-					}
-			}
-		}
-		seg_error = 100*seg_error/square;		
-		for (int i = colours_.size(); i < colours_S.size(); i++)
-			seg_error += part_S[i];			
-    }
-    dump(info + " old segmentation error " + to_string(seg_error) + "%");
-    f<<"old segmentation error " + to_string(seg_error) + "%"<<endl;			
-    */
 
 	//реализуем табличку пересечений (хотя бы для себя)
 	int **match = new int*[colours_S.size()];
@@ -243,7 +125,6 @@ void channelCompare(string path, string info, unsigned short **channel_R, unsign
 		}
 	}	
 
-	//совпадения цветов
 	for ( ssize_t row = 0; row < height ; row++ ){
 		for ( ssize_t column = 0; column < width ; column++ ){
 			for (int i = 0; i < colours_S.size(); i++){
@@ -258,30 +139,12 @@ void channelCompare(string path, string info, unsigned short **channel_R, unsign
 		}
 	}
 
-    /*f<<"match table "<<endl;
-    f<<"таблица сравнениея "<<endl;
-    f<<"           ";
-	for (int j = 0; j < colours_.size(); j++){
-		f<<"colour " + to_string(colours_array[j])<<' ';
-	}
-	f<<endl;
-
-	for (int i = 0; i < colours_S.size(); i++){
-		f<<"colour " + to_string(colours_array_S[i])<<" | ";
-		for (int j = 0; j < colours_.size(); j++){
-			f<<match[i][j]<<"      ";
-		}
-		f<<endl;
-	}*/
-
-	//количество цветов в коротком массиве?
 	int colours_number = colours_.size();
 	if (colours_number > colours_S.size())
 		colours_number = colours_S.size();
 	int current_max = 0, current_i = 0, current_j = 0;
 	seg_error = 0;
 
-	//подбор соответствия цветов
 	for (int k=0; k<colours_number; k++){
 		//найти максимум 
 		current_max = 0;
@@ -314,7 +177,6 @@ void channelCompare(string path, string info, unsigned short **channel_R, unsign
 	}
 	f<<endl;*/
 
-	//расчёт ошибки
 	seg_error = 0;
 	for (int i = 0; i < colours_S.size(); i++){
 		// f<<"colour " + to_string(colours_array_S[i])<<" | ";
@@ -328,73 +190,49 @@ void channelCompare(string path, string info, unsigned short **channel_R, unsign
 	seg_error = square - seg_error;
 	seg_error /= square/100;
 
-    //раскраска
-	for ( ssize_t row = 0; row < height ; row++ ){
-		for ( ssize_t column = 0; column < width ; column++ ){
-			for (int i = 0; i < colours_S.size(); i++){
-				for (int j = 0; j < colours_.size(); j++){
-					if (channel_R[row][column] == colours_array[j]){
-						if (channel_R_S[row][column] == colours_array_S[i]){
-							if (match_[i][j] != 0)
-								channel_R_C[row][column] = 255;
-							else
-								channel_R_C[row][column] = 0;
+	/*if (seg_error > 0.55){
+		//тут какая-то гадость происходит вручную
+		dump("Pshhh");
+		f<<"Pshhh"<<endl;
+		seg_error = 0;
+		for ( ssize_t row = 0; row < height ; row++ ){
+			for ( ssize_t column = 0; column < width ; column++ ){
+				if (channel_R_S[row][column] != 255){
+					channel_R_S[row][column] = 0;
+				}
+				if (channel_R[row][column] == channel_R_S[row][column])
+					channel_R_C[row][column] = 255;
+				else{
+					seg_error++;
+					channel_R_C[row][column] = 0;
+				}				
+			}
+		}
+		seg_error /= square/100;
+	}
+	else{*/
+	    //раскраска
+		for ( ssize_t row = 0; row < height ; row++ ){
+			for ( ssize_t column = 0; column < width ; column++ ){
+				for (int i = 0; i < colours_S.size(); i++){
+					for (int j = 0; j < colours_.size(); j++){
+						if (channel_R[row][column] == colours_array[j]){
+							if (channel_R_S[row][column] == colours_array_S[i]){
+								if (match_[i][j] != 0)
+									channel_R_C[row][column] = 255;
+								else
+									channel_R_C[row][column] = 0;
+							}
 						}
 					}
 				}
 			}
-		}
-	}	
-	
+		}		
+	/*}*/
+
     dump(info + " segmentation error " + to_string(seg_error) + "%");
     // f<<"segmentation error " + to_string(seg_error) + "%"<<endl;
     f<<"ошибка сегментации " + to_string(seg_error) + "%"<<endl;
-
-/*	if (seg_error > 0){
-		//тут какая-то гадость происходит
-		dump("Started full check variant");
-		f<<"Started full check variant"<<endl;
-		seg_error = 0;
-
-		double seg_error_min = 1;
-		colours_number--;
-		int variants = fact(colours_number);
-		dump("colour number is " + to_string(colours_number));
-		dump("colour 1 number is " + to_string(colours_.size()));
-		dump("colour 2 number is " + to_string(colours_S.size()));
-
-		//смотрим какой массив короче
-		for (int k=0; k<colours_number; k++){
-			for (int l=0; l<colours_number; l++){
-				//совпадения цветов
-				for ( ssize_t row = 0; row < height ; row++ ){
-					for ( ssize_t column = 0; column < width ; column++ ){
-
-						if (channel_R[row][column] == colours_array[l]){
-							if (channel_R_S[row][column] == colours_array_S[l]){
-								seg_error += 1;
-								// channel_R_C[row][column] = 255;
-							}
-							// else{
-								// channel_R_C[row][column] = 0;
-							// }
-						}
-
-					}
-				}
-				std::swap(colours_array_S[l], colours_array_S[l+1]);
-
-				seg_error = square - seg_error;
-				seg_error /= square/100;
-
-				if (seg_error < seg_error_min){
-					seg_error_min = seg_error;
-				}
-
-				dump(seg_error);
-			}
-		}
-	}*/
 
     for (int j = 0; j < colours_S.size(); j++){
     	delete [] match[j];
@@ -408,7 +246,7 @@ void channelCompare(string path, string info, unsigned short **channel_R, unsign
 //
 //
 // 
-void compareImages(string path, Image etalon_image, Image secondary_image, string info){
+void compareImages1(string path, Image etalon_image, Image secondary_image, string info){
 	ofstream f;
 	f.open(path + "/output.txt", ios::app);	
 	Pixels etalon(etalon_image);
@@ -501,9 +339,9 @@ void compareImages(string path, Image etalon_image, Image secondary_image, strin
 				dst_image_B.modifyImage();
 				Pixels dst_view_B(dst_image_B);
 
-				channelCompare(path, "comparing test RED", channel_R, channel_R_S, channel_R_C, width, height);
-				channelCompare(path, "comparing test GREEN", channel_G, channel_G_S, channel_G_C, width, height);
-				channelCompare(path, "comparing test BLUE", channel_B, channel_B_S, channel_B_C, width, height);
+				channelCompare1(path, "comparing test RED", channel_R, channel_R_S, channel_R_C, width, height);
+				channelCompare1(path, "comparing test GREEN", channel_G, channel_G_S, channel_G_C, width, height);
+				channelCompare1(path, "comparing test BLUE", channel_B, channel_B_S, channel_B_C, width, height);
 
 				//рисуем итоговую разницу карт R
 				for ( ssize_t row = 0; row < height ; row++ ){
@@ -552,7 +390,7 @@ void compareImages(string path, Image etalon_image, Image secondary_image, strin
 			}
 			else
 			{
-				channelCompare(path, "comparing test grey", channel_R, channel_R_S, channel_R_C, width, height);
+				channelCompare1(path, "comparing test grey", channel_R, channel_R_S, channel_R_C, width, height);
 
 				//рисуем итоговую разницу карт
 				for ( ssize_t row = 0; row < height ; row++ ){
@@ -564,6 +402,7 @@ void compareImages(string path, Image etalon_image, Image secondary_image, strin
 
 				dst_view.sync();
 				dst_image.write(path + "/comporation" + info + ".bmp");
+
 			}
 
 			//Destructing the model of an image
@@ -598,10 +437,11 @@ void compareImages(string path, Image etalon_image, Image secondary_image, strin
 		dump("Image sizes don't match.");
 	}
 }
+
 // path - путь до папки с картинками
 // base_image_name - имя эталонного изображения
 // check_image_name - имя сравниваемого изображения
-void CompareImages(string path, string base_image_name, string check_image_name){
+void CompareImages1(string path, string base_image_name, string check_image_name){
 	//declare images
 	Image seg_etalon;
 	Image seg_other;
@@ -613,7 +453,7 @@ void CompareImages(string path, string base_image_name, string check_image_name)
 	try{
 		seg_etalon.read(imagepath_etalon);
 		seg_other.read(imagepath_other);
-		compareImages(path, seg_etalon, seg_other, "");
+		compareImages1(path, seg_etalon, seg_other, "");
 		seg_etalon.write(path + "/etalon.bmp");
 		seg_other.write(path + "/other.bmp");		
 	}

@@ -1,16 +1,4 @@
-// **channel_R,  **channel_G,  **channel_B - адреса массивов каналов
-// width, height - ширина, высота
-bool ColorDetect(unsigned short **channel_R, unsigned short **channel_G, unsigned short **channel_B,  int width, int height){
-	// проверка на цветность. Если хоть что-то не совпало между каналами - сразу отвечаем, что цветное.
-	for ( ssize_t row = 0; row < height ; row++ ){
-		for ( ssize_t column = 0; column < width ; column++ ){
-			if ((channel_R[row][column]!=channel_G[row][column])||(channel_R[row][column]!=channel_B[row][column])||(channel_B[row][column]!=channel_G[row][column])){
-				return true;
-			}
-		}
-	}	
-	return false;
-}
+//modified: pixels row are mirrowed!
 // path - path to an output txt-file
 // image_name - name of the image - argv[i+1] after argv[i] = "-i"
 // bi - a number of binary image to process (from 1 to 8). If none all 8 are done.
@@ -18,7 +6,7 @@ bool ColorDetect(unsigned short **channel_R, unsigned short **channel_G, unsigne
 // hardness - 0.1-0.99 - the minimum relative vicinity for the threshholds.
 // points_number - number of points on histogramm
 // version - 1, 2, 3 - a number of algorythm modification: 1 is for a simple aggorythm and 2 is for a color sensitive aggorythm for high probability parts.
-void image(string path, string image_name, int bi, bool colourfull, double hardness, int points_number, int version){	
+void image1(string path, string image_name, int bi, bool colourfull, double hardness, int points_number, int version, int fS){	
 	try{
 		//описывает поток для записи данных в файл
 		ofstream f; 
@@ -44,12 +32,18 @@ void image(string path, string image_name, int bi, bool colourfull, double hardn
 		int width = src_image.size().width();
 		int height = src_image.size().height();
 		int square = width * height;
-		frameWidth = 21;
-		frameHeight = 21;		
-		// frameWidth = pow(log(width)/log(sqrt(2)), 1.15);
-		// if ((frameWidth&1) == 0) frameWidth++;
-		// frameHeight = pow(log(height)/log(sqrt(2)), 1.15);
-		// if ((frameHeight&1) == 0) frameHeight++;
+		if (version == 5){
+			frameWidth = 7;
+			frameHeight = 7;
+		}
+		else{
+			frameWidth = fS;
+			frameHeight = fS;
+			// frameWidth = pow(log(width)/log(sqrt(2)), 1.15);
+			// if ((frameWidth&1) == 0) frameWidth++;
+			// frameHeight = pow(log(height)/log(sqrt(2)), 1.15);
+			// if ((frameHeight&1) == 0) frameHeight++;			
+		}
 		//dump
 		f<<"Ширина исходного изображения " + to_string(width) + "px, высота " + to_string(height) + "px"<<endl;		
 		f<<"Поэтому ширина окна " + to_string(frameWidth) + "px, " + "высота окна " + to_string(frameHeight) + "px"<<endl;
@@ -62,6 +56,11 @@ void image(string path, string image_name, int bi, bool colourfull, double hardn
 		dst_image.type(TrueColorType);
 		dst_image.modifyImage();
 		Pixels dst_view(dst_image);
+		//Declare new sizes
+		int old_height = height;
+		height += 2*frameHeight;
+		int old_width = width;
+		width += 2*frameWidth;
 		//Declare a model of an image.
 		unsigned short **channel_R = new unsigned short*[height];
 		unsigned short **channel_G = new unsigned short*[height];
@@ -84,26 +83,78 @@ void image(string path, string image_name, int bi, bool colourfull, double hardn
 			channel_B_S[i] = new unsigned short[width];
 			channel_Grey_S[i] = new unsigned short[width];
 		}
+		//setting for zero
+		for ( ssize_t row = 0; row < height ; row++ ){
+			for ( ssize_t column = 0; column < width ; column++ ){			
+				channel_R[row][column] = 0;
+				channel_G[row][column] = 0;
+				channel_B[row][column] = 0;
+				channel_R_S[row][column] = 0;
+				channel_G_S[row][column] = 0;
+				channel_B_S[row][column] = 0;
+				channel_Grey[row][column] = 0;
+				channel_Grey_S[row][column] = 0;
+			}
+		}
 		//цвет - ImageMagic
 		Color pixel_color = *(src_view.get(1,1,1,1));
 		ColorRGB pixel_rgb(pixel_color);
+		//
+
+		unsigned short r=0,g=0,b=0;
 		//переписывание изображения в цвумерный массив-модель
-		for ( ssize_t row = 0; row < height ; row++ ){
-			for ( ssize_t column = 0; column < width ; column++ ){
+		for ( ssize_t row = 0; row < old_height ; row++ ){
+			for ( ssize_t column = 0; column < old_width ; column++ ){
 				pixel_color = *(src_view.get(column,row,1,1)); //вот это нельяз ли упростить
+
 				ColorRGB pixel_rgb(pixel_color);
+
+				r=(unsigned short) 255*pixel_rgb.red();
+				g=(unsigned short) 255*pixel_rgb.green();
+				b=(unsigned short) 255*pixel_rgb.blue();
+
 				//каналы отдельно
-				channel_R[row][column] = (unsigned short) 255*pixel_rgb.red();
-				channel_G[row][column] = (unsigned short) 255*pixel_rgb.green();
-				channel_B[row][column] = (unsigned short) 255*pixel_rgb.blue();
-				//серость
-				channel_Grey[row][column] = (unsigned short) (channel_R[row][column]+channel_G[row][column]+channel_B[row][column])/3;
+				channel_R[row+frameHeight][column+frameWidth] = r;
+				channel_G[row+frameHeight][column+frameWidth] = g;
+				channel_B[row+frameHeight][column+frameWidth] = b;
+				//зеркальное отражение ряда пикселей по края картинки
+				//верхняя полоса
+				if (row <= frameHeight){
+					channel_R[frameHeight-row][column+frameWidth] = r;
+					channel_G[frameHeight-row][column+frameWidth] = g;
+					channel_B[frameHeight-row][column+frameWidth] = b;
+				}
+				// правая полоса
+				if (column >= old_width - frameWidth){
+					channel_R[row+frameHeight][-column+2*old_width+frameWidth-1] = r;
+					channel_G[row+frameHeight][-column+2*old_width+frameWidth-1] = g;
+					channel_B[row+frameHeight][-column+2*old_width+frameWidth-1] = b;
+				}								
+				//нижняя полоса
+				if (row >= old_height - frameHeight){
+					channel_R[-row+2*old_height+frameHeight-1][column+frameWidth] = r;
+					channel_G[-row+2*old_height+frameHeight-1][column+frameWidth] = g;
+					channel_B[-row+2*old_height+frameHeight-1][column+frameWidth] = b;
+				}
+				//левая полоса
+				if (column <= frameWidth){
+					channel_R[frameHeight+row][-column+frameWidth] = r;
+					channel_G[frameHeight+row][-column+frameWidth] = g;
+					channel_B[frameHeight+row][-column+frameWidth] = b;
+				}
 				//обнуление результата заранее
 				channel_R_S[row][column] = 0;
 				channel_G_S[row][column] = 0;
 				channel_B_S[row][column] = 0;
 			}
 		}
+
+		for ( ssize_t row = 0; row < height ; row++ ){
+			for ( ssize_t column = 0; column < width ; column++ ){			
+				//серость
+				channel_Grey[row][column] = (unsigned short) (channel_R[row][column]+channel_G[row][column]+channel_B[row][column])/3;
+			}
+		}		
 		if (bi!=8){
 			f<<"Будет обработано " + to_string(bi) + " разрядное изображение."<<endl;
 			seg_number = bi;
@@ -122,23 +173,20 @@ void image(string path, string image_name, int bi, bool colourfull, double hardn
 				dst_image.modifyImage();
 				Pixels dst_view(dst_image);
 				//поканальная обработка
-				switch(version){
-					case 1:
-						channel_R_S = channelSegmentation(path, "R", channel_R, width, height, i, points_number, frameWidth, frameHeight, hardness);
-						channel_G_S = channelSegmentation(path, "G", channel_G, width, height, i, points_number, frameWidth, frameHeight, hardness);
-						channel_B_S = channelSegmentation(path, "B", channel_B, width, height, i, points_number, frameWidth, frameHeight, hardness);
+				switch(version)
+				{
+					case 1:					
+						channel_R_S = channelSegmentationCrop(path, "R", channel_R, width, height, i, points_number, frameWidth, frameHeight, hardness);
+						channel_G_S = channelSegmentationCrop(path, "G", channel_G, width, height, i, points_number, frameWidth, frameHeight, hardness);
+						channel_B_S = channelSegmentationCrop(path, "B", channel_B, width, height, i, points_number, frameWidth, frameHeight, hardness);
 					break;
-					case 2:
-						channel_R_S = channelSegmentation2(path, "R", channel_R, width, height, i, points_number, frameWidth, frameHeight, hardness);
-						channel_G_S = channelSegmentation2(path, "G", channel_G, width, height, i, points_number, frameWidth, frameHeight, hardness);
-						channel_B_S = channelSegmentation2(path, "B", channel_B, width, height, i, points_number, frameWidth, frameHeight, hardness);
-					break;
-					case 3:
-						channel_R_S = channelSegmentation3(path, "R", channel_R, width, height, i, points_number, frameWidth, frameHeight, hardness);
-						channel_G_S = channelSegmentation3(path, "G", channel_G, width, height, i, points_number, frameWidth, frameHeight, hardness);
-						channel_B_S = channelSegmentation3(path, "B", channel_B, width, height, i, points_number, frameWidth, frameHeight, hardness);
+					case 5:					
+						channel_R_S = channelSegmentationCrop5(path, "R", channel_R, width, height, i, points_number, frameWidth, frameHeight, hardness);
+						channel_G_S = channelSegmentationCrop5(path, "G", channel_G, width, height, i, points_number, frameWidth, frameHeight, hardness);
+						channel_B_S = channelSegmentationCrop5(path, "B", channel_B, width, height, i, points_number, frameWidth, frameHeight, hardness);
 					break;
 				}
+
 				//рисуем итоговую карту "слоя" (цветную)
 				for ( ssize_t row = 0; row < height ; row++ ){
 					for ( ssize_t column = 0; column < width ; column++ ){
@@ -148,7 +196,11 @@ void image(string path, string image_name, int bi, bool colourfull, double hardn
 				}
 				dst_view.sync();
 				//запись результата склеивания каналов для текущего РДИ
-				dst_image.write(path + "/" + to_string(i) +"bi.bmp");								
+				// dst_image.write(path + "/" + to_string(i) +"bi.bmp");
+				// dump("crop");
+				// dst_image.crop(Geometry(frameWidth, frameHeight, width-frameWidth, height-frameHeight));
+				dst_image.crop(Geometry(width-2*frameWidth,height-2*frameHeight,frameWidth,frameHeight));
+				dst_image.write(path + "/" + to_string(i) +"bi.bmp");
 			}
 		}
 		else{
@@ -158,18 +210,14 @@ void image(string path, string image_name, int bi, bool colourfull, double hardn
 				Image dst_image(Geometry(width, height), ColorRGB(0, 0, 0));
 				dst_image.modifyImage();
 				Pixels dst_view(dst_image);
-				switch (version){
-					case 1:
-						channel_R_S = channelSegmentation(path, "grey", channel_R, width, height, i, points_number, frameWidth, frameHeight, hardness);
+
+				switch(version)
+				{
+					case 1:					
+						channel_R_S = channelSegmentationCrop(path, "grey", channel_R, width, height, i, points_number, frameWidth, frameHeight, hardness);
 					break;
-					case 2:
-						channel_R_S = channelSegmentation2(path, "grey", channel_R, width, height, i, points_number, frameWidth, frameHeight, hardness);
-					break;
-					case 3:
-						channel_R_S = channelSegmentation3(path, "grey", channel_R, width, height, i, points_number, frameWidth, frameHeight, hardness);
-					break;
-					case 4:
-						channel_R_S = channelSegmentation4(path, "grey", channel_R, width, height, i, points_number, frameWidth, frameHeight, hardness);
+					case 5:					
+						channel_R_S = channelSegmentationCrop5(path, "grey", channel_R, width, height, i, points_number, frameWidth, frameHeight, hardness);
 					break;
 				}
 			}

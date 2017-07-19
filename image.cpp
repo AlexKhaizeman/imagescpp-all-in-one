@@ -9,17 +9,22 @@ using namespace Magick;
 #include <ctime>
 #include <sys/stat.h>
 #include <tiffio.h>
+#include <cmath>
 
 #include "dumphelp.h"
 #include "--channelSegmentation.h"
 #include "--channelSegmentation2.h"
 #include "--channelSegmentation3.h"
+#include "--channelSegmentation4.h"
+#include "--channelSegmentation5.h"
 #include "--channelSegmentations.h"
 #include "-image.h"
+#include "-image1.h"
 #include "-images.h"
 #include "-compare.h"
+#include "-compare1.h"
 
-// g++ image.cpp -o image `Magick++-config --cppflags --cxxflags --ldflags --libs` && ./image
+// g++ image.cpp -o image `Magick++-config --cppflags --cxxflags --ldflags --libs` && ./image -h
 
 int main(int argc, char const *argv[])
 {	
@@ -43,7 +48,7 @@ int main(int argc, char const *argv[])
 	}
 	//work with input
 	for (int i = 0; i < argc-1; ++i){
-		if ((input_arguments[i]=="-i") || (input_arguments[i]=="-i2")|| (input_arguments[i]=="-i3") || (input_arguments[i]=="-c") || (input_arguments[i]=="-is")){
+		if ((input_arguments[i]=="-i") || (input_arguments[i]=="-i1") || (input_arguments[i]=="-i2") || (input_arguments[i]=="-i3") || (input_arguments[i]=="-i4")|| (input_arguments[i]=="-i5") || (input_arguments[i]=="-c") || (input_arguments[i]=="-is")){
 			dump("Started.");
 			// const char *path_ = path.c_str();
 			// mkdir(path_, 0777);
@@ -52,6 +57,7 @@ int main(int argc, char const *argv[])
 			InitializeMagick(*argv);
 			double hardness = 0.7;
 			int points_number = 500;
+			int fS = 21;
 			for (int ii = i; ii < argc-1; ++ii){
 				if (input_arguments[ii]=="-h*"){
 					try{
@@ -66,7 +72,7 @@ int main(int argc, char const *argv[])
 					catch( Exception &error_ ){
 						cout << "Caught exception: " << error_.what() << endl;
 					}
-				}
+				}			
 				if (input_arguments[ii]=="-p*"){
 					// points_number = std::stoi(input_arguments[i+1]);
 					points_number = stoi(input_arguments[ii+1]);
@@ -109,6 +115,51 @@ int main(int argc, char const *argv[])
 				f<<"Selected mode is one image mode."<<endl;
 				//RUN IMAGE
 				image(path, input_arguments[i+1], bi, colorfull, hardness, points_number, 1);
+			}
+			if (input_arguments[i]=="-i1"){
+				//preparation
+				path += " -i ";
+				path += input_arguments[i+1];
+				int bi=8;
+				bool colorfull = false;
+				for (int ii = i; ii < argc-1; ++ii){
+					if (input_arguments[ii]=="-f*"){
+						try{
+							fS = stoi(input_arguments[ii+1]);
+							if (fS > 31){
+								fS = 31;
+							}
+							if (fS < 7){
+								fS = 7;
+							}
+						}
+						catch( Exception &error_ ){
+							cout << "Caught exception: " << error_.what() << endl;
+						}
+					}						
+					if (input_arguments[ii]=="-bi*"){
+						bi = stoi(input_arguments[ii+1]);
+						if (bi>8 || bi<0){
+							bi = 8;
+							dump("Invalid binary image argument. All binary images will be proccessed.");
+						}
+						else{
+							path += " bi " + to_string(bi);
+						}
+					}					
+					if (input_arguments[ii]=="-cl*"){
+						if (input_arguments[ii+1] == "1"){
+							colorfull = true;
+							path += " grey";
+						}
+					}
+				}
+				const char *path_ = path.c_str();
+				mkdir(path_, 0777);
+				f.open(path + "/output.txt", ios::app);
+				f<<"Selected mode is one modified image mode. Row of pixels wil be mirrowed."<<endl;
+				//RUN IMAGE
+				image1(path, input_arguments[i+1], bi, colorfull, hardness, points_number, 1, fS);
 			}
 			if (input_arguments[i]=="-i2"){
 				//preparation
@@ -172,6 +223,68 @@ int main(int argc, char const *argv[])
 				//RUN IMAGE
 				image(path, input_arguments[i+1], bi, colorfull, hardness, points_number, 3);
 			}
+			if (input_arguments[i]=="-i4"){
+				//preparation
+				path += " -i4 ";
+				path += input_arguments[i+1];
+				int bi=8;
+				bool colorfull = false;
+				for (int ii = i; ii < argc-1; ++ii){
+					if (input_arguments[ii]=="-bi*"){
+						bi = stoi(input_arguments[ii+1]);
+						if (bi>8 || bi<0){
+							bi = 8;
+							dump("Invalid binary image argument. All binary images will be proccessed.");
+						}
+						else{
+							path += " bi " + to_string(bi);
+						}
+					}					
+					if (input_arguments[ii]=="-cl*"){
+						if (input_arguments[ii+1] == "1"){
+							colorfull = true;
+							path += " grey";
+						}
+					}
+				}
+				const char *path_ = path.c_str();
+				mkdir(path_, 0777);
+				f.open(path + "/output.txt", ios::app);
+				f<<"Selected mode is one image mode."<<endl;
+				//RUN IMAGE
+				image(path, input_arguments[i+1], bi, colorfull, hardness, points_number, 4);
+			}	
+			if (input_arguments[i]=="-i5"){
+				//preparation
+				path += " -i ";
+				path += input_arguments[i+1];
+				int bi=8;
+				bool colorfull = false;
+				for (int ii = i; ii < argc-1; ++ii){
+					if (input_arguments[ii]=="-bi*"){
+						bi = stoi(input_arguments[ii+1]);
+						if (bi>8 || bi<0){
+							bi = 8;
+							dump("Invalid binary image argument. All binary images will be proccessed.");
+						}
+						else{
+							path += " bi " + to_string(bi);
+						}
+					}					
+					if (input_arguments[ii]=="-cl*"){
+						if (input_arguments[ii+1] == "1"){
+							colorfull = true;
+							path += " colorcheck";
+						}
+					}
+				}
+				const char *path_ = path.c_str();
+				mkdir(path_, 0777);
+				f.open(path + "/output.txt", ios::app);
+				f<<"Selected mode is one modified image mode. Row of pixels wil be mirrowed."<<endl;
+				//RUN IMAGE
+				image1(path, input_arguments[i+1], bi, colorfull, hardness, points_number, 5, fS);
+			}			
 			//compare mode
 			if (input_arguments[i]=="-c"){
 				//preparation
@@ -183,6 +296,18 @@ int main(int argc, char const *argv[])
 				f<<"Selected mode is an image compare mode."<<endl;
 				//RUN COMPARE
 				CompareImages(path, input_arguments[i+1], input_arguments[i+2]);
+			}
+			//compare mode
+			if (input_arguments[i]=="-c1"){
+				//preparation
+				path += " -c1 ";
+				// path += " -c " + input_arguments[i+1] + " vs " + input_arguments[i+2];
+				const char *path_ = path.c_str();
+				mkdir(path_, 0777);
+				f.open(path + "/output.txt", ios::app);
+				f<<"Selected mode is an image compare mode."<<endl;
+				//RUN COMPARE
+				CompareImages1(path, input_arguments[i+1], input_arguments[i+2]);
 			}
 			if (input_arguments[i]=="-is"){
 /*				//preparation
